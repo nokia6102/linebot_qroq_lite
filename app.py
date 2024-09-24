@@ -53,7 +53,7 @@ def handle_message(event):
     msg = event.message.text
     try:
         # 將接收到的訊息轉換為 Groq API 的 message 格式
-        messages = [{"role": "user", "content": msg}]
+        messages = [{"role": "user", "content": msg + " reply in 繁中"}]
         Groq_answer = Groq_response(messages)  # 改為呼叫 Groq_response 函數
         print(Groq_answer)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(Groq_answer))
