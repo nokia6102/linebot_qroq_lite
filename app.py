@@ -8,10 +8,9 @@ from linebot.exceptions import (
 from linebot.models import *
 import os
 import traceback
-from groq import GroqClient, GroqError  # 假設這是 Groq 的 Python SDK
+from groq import Groq  # 確保正確引入 Groq 客戶端
 
 app = Flask(__name__)
-static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
 # Channel Access Token
 line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
@@ -19,24 +18,22 @@ line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
 # 初始化 Groq API client
-groq_api_key = os.getenv('GROQ_API_KEY')  # 從環境變數取得 Groq API key
-groq_client = GroqClient(api_key=groq_api_key)  # 假設這是正確的 Groq API 客戶端初始化方法
+client = Groq()  # 初始化 Groq 客戶端
 
 def Groq_response(messages):
     try:
-        # 呼叫 Groq API
-        response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",  # 假設使用 Groq 的 llama 模型
+        # 呼叫 Groq API 來進行 Chat Completion
+        chat_completion = client.chat.completions.create(
             messages=messages,
-            max_tokens=2000,
-            temperature=1.2
+            model="llama3-8b-8192",  # 根據你的模型選擇
+            temperature=0.5,  # 設置溫度來控制隨機性
+            max_tokens=1024,  # 設定最大 tokens
         )
         # 擷取回應中的文字
-        reply = response.choices[0].message.content
+        reply = chat_completion.choices[0].message.content
         return reply
-    except GroqError as groq_err:
-        # 如果 Groq API 發生錯誤，回傳錯誤訊息
-        return f"GROQ API 發生錯誤: {groq_err.message}"
+    except Exception as e:
+        return f"GROQ API 呼叫失敗: {str(e)}"
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
