@@ -1,5 +1,4 @@
 from flask import Flask, request, abort
-import requests  # 新增 requests 用於 Groq API 調用
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -9,6 +8,7 @@ from linebot.exceptions import (
 from linebot.models import *
 import os
 import traceback
+from groq import GroqClient, GroqError  # 假設這是 Groq 的 Python SDK
 
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
@@ -17,30 +17,26 @@ static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 # Channel Secret
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
-# Groq API Key初始化設定
-groq_api_key = os.getenv('GROQ_API_KEY')  # 請確保環境變數設置正確
 
-def Groq_response(text):
-    url = "https://api.groq.com/v1/completions"  # 假設的 Groq API endpoint
-    headers = {
-        'Authorization': f'Bearer {groq_api_key}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        "model": "groq-gpt-model",  # 使用 Groq 的模型名稱
-        "prompt": text,
-        "temperature": 0.5,
-        "max_tokens": 500
-    }
+# 初始化 Groq API client
+groq_api_key = os.getenv('GROQ_API_KEY')  # 從環境變數取得 Groq API key
+groq_client = GroqClient(api_key=groq_api_key)  # 假設這是正確的 Groq API 客戶端初始化方法
+
+def Groq_response(messages):
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        answer = data['choices'][0]['text'].replace('。','')  # 根據 Groq 的回應結構進行提取
-        return answer
-    except requests.exceptions.RequestException as e:
-        print(f"API request failed: {e}")
-        return "Groq API 呼叫失敗，請檢查 API Key 或查詢 Log 了解更多細節"
+        # 呼叫 Groq API
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",  # 假設使用 Groq 的 llama 模型
+            messages=messages,
+            max_tokens=2000,
+            temperature=1.2
+        )
+        # 擷取回應中的文字
+        reply = response.choices[0].message.content
+        return reply
+    except GroqError as groq_err:
+        # 如果 Groq API 發生錯誤，回傳錯誤訊息
+        return f"GROQ API 發生錯誤: {groq_err.message}"
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
@@ -59,12 +55,14 @@ def callback():
 def handle_message(event):
     msg = event.message.text
     try:
-        Groq_answer = Groq_response(msg)  # 改為呼叫 Groq_response 函數
+        # 將接收到的訊息轉換為 Groq API 的 message 格式
+        messages = [{"role": "user", "content": msg}]
+        Groq_answer = Groq_response(messages)  # 改為呼叫 Groq_response 函數
         print(Groq_answer)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(Groq_answer))
     except:
         print(traceback.format_exc())
-        line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的Groq API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage('GROQ API 呼叫失敗，請檢查 API Key 或查詢 Log 了解更多細節'))
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
@@ -79,7 +77,7 @@ def welcome(event):
     message = TextSendMessage(text=f'{name}歡迎加入')
     line_bot_api.reply_message(event.reply_token, message)
 
-import os
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
