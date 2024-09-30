@@ -7,6 +7,7 @@ from linebot.exceptions import (
 )
 from linebot.models import *
 import os
+import requests
 import traceback
 from groq import Groq  # 確保正確引入 Groq 客戶端
 
@@ -19,6 +20,11 @@ handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
 # 初始化 Groq API client
 client = Groq()  # 初始化 Groq 客戶端
+
+# 初始化對話歷史
+conversation_history = []
+# 設定最大對話記憶長度
+MAX_HISTORY_LEN = 10
 
 def Groq_response(messages):
     try:
@@ -35,6 +41,44 @@ def Groq_response(messages):
     except Exception as e:
         return f"GROQ API 呼叫失敗: {str(e)}"
 
+# 要檢查 LINE Webhook URL 的函數
+def check_line_webhook():
+    url = "https://api.line.me/v2/bot/channel/webhook/endpoint"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('CHANNEL_ACCESS_TOKEN')}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        current_webhook = response.json().get("endpoint", "無法取得 Webhook URL")
+        print(f"當前 Webhook URL: {current_webhook}")
+        return current_webhook
+    else:
+        print(f"檢查 Webhook URL 失敗，狀態碼: {response.status_code}, 原因: {response.text}")
+        return None
+
+# 更新 LINE Webhook URL 的函數
+def update_line_webhook():
+    new_webhook_url = "https://linebot-qroq.onrender.com/callback"  # 替換為您的新 Webhook URL
+    current_webhook_url = check_line_webhook()
+    
+    if current_webhook_url != new_webhook_url:
+        url = "https://api.line.me/v2/bot/channel/webhook/endpoint"
+        headers = {
+            "Authorization": f"Bearer {os.getenv('CHANNEL_ACCESS_TOKEN')}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "endpoint": new_webhook_url
+        }
+
+        response = requests.put(url, headers=headers, json=payload)
+        if response.status_code == 200:
+            print(f"Webhook URL 更新成功: {new_webhook_url}")
+        else:
+            print(f"更新失敗，狀態碼: {response.status_code}, 原因: {response.text}")
+    else:
+        print("當前的 Webhook URL 已是最新，無需更新。")
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -50,13 +94,26 @@ def callback():
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global conversation_history
     msg = event.message.text
+    
+    # 將訊息加入對話歷史
+    conversation_history.append({"role": "user", "content": msg + ", 請以繁體中文回答我問題"})
+    
+    # 限制對話歷史長度
+    if len(conversation_history) > MAX_HISTORY_LEN * 2:
+        conversation_history = conversation_history[-MAX_HISTORY_LEN * 2:]
+    
+    # 傳送最新對話歷史給 Groq
+    messages = conversation_history[-MAX_HISTORY_LEN:]
+    
     try:
-        # 將接收到的訊息轉換為 Groq API 的 message 格式
-        messages = [{"role": "user", "content": msg + "\n,請以繁體中文回答我問題"}]
-        Groq_answer = Groq_response(messages)  # 改為呼叫 Groq_response 函數
+        Groq_answer = Groq_response(messages)  # 呼叫 Groq API 取得回應
         print(Groq_answer)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(Groq_answer))
+        
+        # 將 GPT 的回應加入對話歷史
+        conversation_history.append({"role": "assistant", "content": Groq_answer})
     except:
         print(traceback.format_exc())
         line_bot_api.reply_message(event.reply_token, TextSendMessage('GROQ API 呼叫失敗，請檢查 API Key 或查詢 Log 了解更多細節'))
@@ -76,5 +133,9 @@ def welcome(event):
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    try:
+        #update_line_webhook()  # 啟動時自動更新 Webhook URL
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"伺服器啟動失敗: {e}")
 
