@@ -5,7 +5,6 @@ from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMes
 from linebot.models import *
 import os
 import requests
-import my_commands.database as db
 from my_commands.lottery_gpt import lottery_gpt
 from my_commands.gold_gpt import gold_gpt
 from my_commands.platinum_gpt import platinum_gpt
