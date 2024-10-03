@@ -1,7 +1,6 @@
 import os
 import openai
 from groq import Groq
-from replit import db
 from datetime import datetime
 import pandas as pd
 
