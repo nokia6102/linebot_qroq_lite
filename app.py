@@ -1,15 +1,14 @@
+import re
 from flask import Flask, request, abort
-from linebot import (
-    LineBotApi, WebhookHandler
-)
-from linebot.exceptions import (
-    InvalidSignatureError
-)
+from linebot import LineBotApi, WebhookHandler
+from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMessage
 from linebot.models import *
 import os
 import requests
-import traceback
+# import traceback
 from groq import Groq  # 確保正確引入 Groq 客戶端
+from my_commands.lottery_gpt import lottery_gpt  # 匯入大樂透模組
+from my_commands.stock_gpt import stock_gpt, get_reply
 
 app = Flask(__name__)
 
@@ -19,27 +18,27 @@ line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
 # 初始化 Groq API client
-client = Groq()  # 初始化 Groq 客戶端
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # 初始化對話歷史
-conversation_history = []
+conversation_history = {}
 # 設定最大對話記憶長度
 MAX_HISTORY_LEN = 10
 
-def Groq_response(messages):
+# 建立 GPT 模型
+def get_reply(messages):
     try:
-        # 呼叫 Groq API 來進行 Chat Completion
-        chat_completion = client.chat.completions.create(
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",
             messages=messages,
-            model="llama3-8b-8192",  # 根據你的模型選擇
-            temperature=0.5,  # 設置溫度來控制隨機性
-            max_tokens=1024,  # 設定最大 tokens
+            max_tokens=2000,
+            temperature=1.2
         )
-        # 擷取回應中的文字
-        reply = chat_completion.choices[0].message.content
+        reply = response.choices[0].message.content
         return reply
-    except Exception as e:
-        return f"GROQ API 呼叫失敗: {str(e)}"
+    except groq.GroqError as groq_err:
+        reply = f"GROQ API 發生錯誤: {groq_err.message}"
+        return reply
 
 # 要檢查 LINE Webhook URL 的函數
 def check_line_webhook():
@@ -58,9 +57,10 @@ def check_line_webhook():
 
 # 更新 LINE Webhook URL 的函數
 def update_line_webhook():
-    new_webhook_url = "https://linebot-qroq.onrender.com/callback"  # 替換為您的新 Webhook URL
-    current_webhook_url = check_line_webhook()
-    
+    baseUrl = "https://linebot-qroq.onrender.com"    # ** 替代Webhook URL base **
+    new_webhook_url = baseUrl + "/callback"
+    current_webhook_url = check_line_webhook()  # 檢查當前的 Webhook URL
+
     if current_webhook_url != new_webhook_url:
         url = "https://api.line.me/v2/bot/channel/webhook/endpoint"
         headers = {
@@ -79,6 +79,7 @@ def update_line_webhook():
     else:
         print("當前的 Webhook URL 已是最新，無需更新。")
 
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -95,47 +96,94 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     global conversation_history
+    user_id = event.source.user_id
     msg = event.message.text
-    
+
+    # 初始化使用者的對話歷史
+    if user_id not in conversation_history:
+        conversation_history[user_id] = []
+
     # 將訊息加入對話歷史
-    conversation_history.append({"role": "user", "content": msg + ", 請以繁體中文回答我問題"})
-    
+    conversation_history[user_id].append({"role": "user", "content": msg + ", 請以繁體中文回答我問題"})
+
+    # 台股代碼邏輯：4-5個數字，且可選擇性有一個英文字母
+    stock_code = re.search(r'\b\d{4,5}[A-Za-z]?\b', msg)
+    # 美股代碼邏輯：1-5個字母
+    stock_symbol = re.search(r'\b[A-Za-z]{1,5}\b', msg)
+
     # 限制對話歷史長度
-    if len(conversation_history) > MAX_HISTORY_LEN * 2:
-        conversation_history = conversation_history[-MAX_HISTORY_LEN * 2:]
-    
-    # 傳送最新對話歷史給 Groq
-    messages = conversation_history[-MAX_HISTORY_LEN:]
-    
+    if len(conversation_history[user_id]) > MAX_HISTORY_LEN * 2:
+        conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY_LEN * 2:]
+
+    # 定義彩種關鍵字列表
+    lottery_keywords = ["威力彩", "大樂透", "539", "雙贏彩", "3星彩", "三星彩", "4星彩", "四星彩", "38樂合彩", "39樂合彩", "49樂合彩", "運彩"]
+
+    # 判斷是否為彩種相關查詢
+    if any(keyword in msg for keyword in lottery_keywords):
+        reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
+    elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
+        reply_text = stock_gpt("大盤")
+    elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"): 
+        reply_text = stock_gpt("美盤")
+    elif stock_code:
+        stock_id = stock_code.group()
+        reply_text = stock_gpt(stock_id)
+    elif stock_symbol:
+        stock_id = stock_symbol.group()
+        reply_text = stock_gpt(stock_id)
+    else:
+        # 傳送最新對話歷史給 Groq
+        messages = conversation_history[user_id][-MAX_HISTORY_LEN:]
+        try:
+            reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
+        except Exception as e:
+            reply_text = f"GROQ API 發生錯誤: {str(e)}"
+
+    # 如果 `reply_text` 為空，設定一個預設回應
+    if not reply_text:
+        reply_text = "抱歉，目前無法提供回應，請稍後再試。"
+
+    # 回應使用者
     try:
-        Groq_answer = Groq_response(messages)  # 呼叫 Groq API 取得回應
-        print(Groq_answer)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(Groq_answer))
-        
-        # 將 GPT 的回應加入對話歷史
-        conversation_history.append({"role": "assistant", "content": Groq_answer})
-    except:
-        print(traceback.format_exc())
-        line_bot_api.reply_message(event.reply_token, TextSendMessage('GROQ API 呼叫失敗，請檢查 API Key 或查詢 Log 了解更多細節'))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(reply_text))
+    except LineBotApiError as e:
+        print(f"LINE 回覆失敗: {e}")
+        # 這裡可以根據需要增加錯誤處理
+
+    # 將 GPT 的回應加入對話歷史
+    conversation_history[user_id].append({"role": "assistant", "content": reply_text})
+
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
     print(event.postback.data)
 
+#觀迎剛剛加入的人
 @handler.add(MemberJoinedEvent)
 def welcome(event):
     uid = event.joined.members[0].user_id
-    gid = event.source.group_id
-    profile = line_bot_api.get_group_member_profile(gid, uid)
+    if isinstance(event.source, SourceGroup):
+        gid = event.source.group_id
+        profile = line_bot_api.get_group_member_profile(gid, uid)
+    elif isinstance(event.source, SourceRoom):
+        rid = event.source.room_id
+        profile = line_bot_api.get_room_member_profile(rid, uid)
+    else:
+        profile = line_bot_api.get_profile(uid)
     name = profile.display_name
-    message = TextSendMessage(text=f'{name}歡迎加入')
+    message = TextSendMessage(text=f'{name} 歡迎加入')
     line_bot_api.reply_message(event.reply_token, message)
 
+# 健康檢查端點
+@app.route('/healthz', methods=['GET'])
+def health_check():
+    return 'OK', 200
+
+# 啟動應用
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     try:
-    # update_line_webhook()  # 啟動時自動更新 Webhook URL
+        update_line_webhook()  # 啟動時自動更新 Webhook URL
         app.run(host='0.0.0.0', port=port)
     except Exception as e:
         print(f"伺服器啟動失敗: {e}")
-
