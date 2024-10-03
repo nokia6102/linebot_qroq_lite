@@ -5,10 +5,15 @@ from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMes
 from linebot.models import *
 import os
 import requests
-# import traceback
-from groq import Groq  # 確保正確引入 Groq 客戶端
-from my_commands.lottery_gpt import lottery_gpt  # 匯入大樂透模組
-#from my_commands.stock_gpt import stock_gpt, get_reply
+import my_commands.database as db
+from my_commands.lottery_gpt import lottery_gpt
+from my_commands.gold_gpt import gold_gpt
+from my_commands.platinum_gpt import platinum_gpt
+from my_commands.money_gpt import money_gpt
+from my_commands.one04_gpt import one04_gpt, get_reply
+from my_commands.partjob_gpt import partjob_gpt, get_reply
+from my_commands.crypto_coin_gpt import crypto_gpt  # 新增這行，匯入 crypto_coin_gpt 模組
+
 
 app = Flask(__name__)
 
