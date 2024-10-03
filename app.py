@@ -121,16 +121,16 @@ def handle_message(event):
     # 判斷是否為彩種相關查詢
     if any(keyword in msg for keyword in lottery_keywords):
         reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
-    elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
-        reply_text = stock_gpt("大盤")
-    elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"): 
-        reply_text = stock_gpt("美盤")
-    elif stock_code:
-        stock_id = stock_code.group()
-        reply_text = stock_gpt(stock_id)
-    elif stock_symbol:
-        stock_id = stock_symbol.group()
-        reply_text = stock_gpt(stock_id)
+    # elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
+    #     reply_text = stock_gpt("大盤")
+    # elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"): 
+    #     reply_text = stock_gpt("美盤")
+    # elif stock_code:
+    #     stock_id = stock_code.group()
+    #     reply_text = stock_gpt(stock_id)
+    # elif stock_symbol:
+    #     stock_id = stock_symbol.group()
+    #     reply_text = stock_gpt(stock_id)
     elif any(msg.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
         reply_text = gold_gpt()
     elif any(msg.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
