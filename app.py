@@ -8,7 +8,7 @@ import requests
 # import traceback
 from groq import Groq  # 確保正確引入 Groq 客戶端
 from my_commands.lottery_gpt import lottery_gpt  # 匯入大樂透模組
-from my_commands.stock_gpt import stock_gpt, get_reply
+#from my_commands.stock_gpt import stock_gpt, get_reply
 
 app = Flask(__name__)
 
