@@ -131,6 +131,24 @@ def handle_message(event):
     elif stock_symbol:
         stock_id = stock_symbol.group()
         reply_text = stock_gpt(stock_id)
+    elif any(msg.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
+        reply_text = gold_gpt()
+    elif any(msg.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
+        reply_text = platinum_gpt()
+    elif msg.lower().startswith(tuple(["日幣", "日元", "jpy", "換日幣"])):
+        reply_text = money_gpt("JPY")
+    elif any(msg.lower().startswith(currency.lower()) for currency in ["美金", "usd", "美元", "換美金"]):
+        reply_text = money_gpt("USD")
+    elif msg.startswith("104:"):
+        reply_text = one04_gpt(msg[4:])
+    elif msg.startswith("pt:"):
+        reply_text = partjob_gpt(msg[3:])
+    elif msg.startswith("cb:"):  # 新增這個條件來處理加密貨幣查詢
+        coin_id = msg[3:].strip()
+        reply_text = crypto_gpt(coin_id)
+    elif msg.startswith("$:"):  # 新增這個條件來處理加密貨幣查詢
+        coin_id = msg[2:].strip()
+        reply_text = crypto_gpt(coin_id)
     else:
         # 傳送最新對話歷史給 Groq
         messages = conversation_history[user_id][-MAX_HISTORY_LEN:]
