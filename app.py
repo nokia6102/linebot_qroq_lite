@@ -12,6 +12,7 @@ from my_commands.money_gpt import money_gpt
 from my_commands.one04_gpt import one04_gpt, get_reply
 from my_commands.partjob_gpt import partjob_gpt, get_reply
 from my_commands.crypto_coin_gpt import crypto_gpt  # 新增這行，匯入 crypto_coin_gpt 模組
+from linebot.exceptions import InvalidSignatureError
 
 
 app = Flask(__name__)
