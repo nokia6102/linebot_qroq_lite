@@ -4,8 +4,8 @@ import re
 
 # 從 yfinance 取得一周股價資料
 def stock_price(stock_id, days=10):
-    # 判斷是否為台股（4-5位數字，可帶字母）
-    if re.match(r'^\d{4,5}[A-Za-z]?$', stock_id):  # 台股代碼格式
+    # 判斷是否為台股（4-6位數字，可帶字母）
+    if re.match(r'^\d{4,6}[A-Za-z]?$', stock_id):  # 台股代碼格式
         stock_id_tw = stock_id + ".TW"
         stock_id_two = stock_id + ".TWO"
 
@@ -53,4 +53,4 @@ def stock_price(stock_id, days=10):
 
 # 測試函數
 # print(stock_price("2330", 10))  # 測試台股代碼
-print(stock_price("AAPL", 10))  # 測試美股代碼
+# print(stock_price("AAPL", 10))  # 測試美股代碼
