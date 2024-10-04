@@ -5,6 +5,7 @@ from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMes
 from linebot.models import *
 import os
 import requests
+from groq import Groq
 from my_commands.lottery_gpt import lottery_gpt
 from my_commands.gold_gpt import gold_gpt
 from my_commands.platinum_gpt import platinum_gpt
@@ -30,6 +31,20 @@ conversation_history = {}
 # 設定最大對話記憶長度
 MAX_HISTORY_LEN = 10
 
+# 建立 GPT 模型
+def get_reply(messages):
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=messages,
+            max_tokens=2000,
+            temperature=1.2
+        )
+        reply = response.choices[0].message.content
+        return reply
+    except groq.GroqError as groq_err:
+        reply = f"GROQ API 發生錯誤: {groq_err.message}"
+        return reply
 
 # 要檢查 LINE Webhook URL 的函數
 def check_line_webhook():
