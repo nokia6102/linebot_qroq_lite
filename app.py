@@ -13,16 +13,17 @@ from my_commands.money_gpt import money_gpt
 from my_commands.one04_gpt import one04_gpt, get_reply
 from my_commands.partjob_gpt import partjob_gpt, get_reply
 from my_commands.crypto_coin_gpt import crypto_gpt  # 新增這行，匯入 crypto_coin_gpt 模組
-from linebot.exceptions import InvalidSignatureError
+from linebot.exceptions import LineBotApiError, InvalidSignatureError
 
 
 app = Flask(__name__)
 
+# SET BASE URL
+base_url = os.getenv("BASE_URL")
 # Channel Access Token
 line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 # Channel Secret
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
-
 # 初始化 Groq API client
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -63,8 +64,7 @@ def check_line_webhook():
 
 # 更新 LINE Webhook URL 的函數
 def update_line_webhook():
-    baseUrl = "https://linebot-qroq.onrender.com"    # ** 替代Webhook URL base **
-    new_webhook_url = baseUrl + "/callback"
+    new_webhook_url = base_url + "/callback"
     current_webhook_url = check_line_webhook()  # 檢查當前的 Webhook URL
 
     if current_webhook_url != new_webhook_url:
@@ -129,7 +129,7 @@ def handle_message(event):
         reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
     # elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
     #     reply_text = stock_gpt("大盤")
-    # elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"): 
+    # elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"):
     #     reply_text = stock_gpt("美盤")
     # elif stock_code:
     #     stock_id = stock_code.group()
@@ -211,3 +211,4 @@ if __name__ == "__main__":
         app.run(host='0.0.0.0', port=port)
     except Exception as e:
         print(f"伺服器啟動失敗: {e}")
+
