@@ -45,6 +45,7 @@ def get_stock_name(stock_id):
 
 # 建立 GPT 模型
 def get_reply(messages):
+    print ("* app.py get_reply")
     try:
         response = groq_client.chat.completions.create(
             model="llama3-70b-8192",
