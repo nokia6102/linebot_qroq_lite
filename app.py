@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMessage
@@ -12,9 +13,9 @@ from my_commands.platinum_gpt import platinum_gpt
 from my_commands.money_gpt import money_gpt
 from my_commands.one04_gpt import one04_gpt, get_reply
 from my_commands.partjob_gpt import partjob_gpt, get_reply
-from my_commands.crypto_coin_gpt import crypto_gpt  # 新增這行，匯入 crypto_coin_gpt 模組
+from my_commands.crypto_coin_gpt import crypto_gpt
 from linebot.exceptions import LineBotApiError, InvalidSignatureError
-
+from my_commands.stock.stock_gpt import stock_gpt, get_reply
 
 app = Flask(__name__)
 
@@ -32,6 +33,16 @@ conversation_history = {}
 # 設定最大對話記憶長度
 MAX_HISTORY_LEN = 10
 
+# 讀取 CSV 檔案，將其轉換為 DataFrame
+stock_data_df = pd.read_csv('name_df.csv')
+
+# 根據股號查找對應的股名
+def get_stock_name(stock_id):
+    result = stock_data_df[stock_data_df['股號'] == int(stock_id)]
+    if not result.empty:
+        return result.iloc[0]['股名']
+    return None
+
 # 建立 GPT 模型
 def get_reply(messages):
     try:
@@ -43,7 +54,7 @@ def get_reply(messages):
         )
         reply = response.choices[0].message.content
         return reply
-    except groq.GroqError as groq_err:
+    except Groq.GroqError as groq_err:
         reply = f"GROQ API 發生錯誤: {groq_err.message}"
         return reply
 
@@ -127,16 +138,12 @@ def handle_message(event):
     # 判斷是否為彩種相關查詢
     if any(keyword in msg for keyword in lottery_keywords):
         reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
-    # elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
-    #     reply_text = stock_gpt("大盤")
-    # elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"):
-    #     reply_text = stock_gpt("美盤")
-    # elif stock_code:
-    #     stock_id = stock_code.group()
-    #     reply_text = stock_gpt(stock_id)
-    # elif stock_symbol:
-    #     stock_id = stock_symbol.group()
-    #     reply_text = stock_gpt(stock_id)
+    elif stock_code:
+        stock_id = stock_code.group()
+        reply_text = stock_gpt(stock_id)
+    elif stock_symbol:
+        stock_id = stock_symbol.group()
+        reply_text = stock_gpt(stock_id)
     elif any(msg.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
         reply_text = gold_gpt()
     elif any(msg.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
@@ -149,10 +156,10 @@ def handle_message(event):
         reply_text = one04_gpt(msg[4:])
     elif msg.startswith("pt:"):
         reply_text = partjob_gpt(msg[3:])
-    elif msg.startswith("cb:"):  # 新增這個條件來處理加密貨幣查詢
+    elif msg.startswith("cb:"):
         coin_id = msg[3:].strip()
         reply_text = crypto_gpt(coin_id)
-    elif msg.startswith("$:"):  # 新增這個條件來處理加密貨幣查詢
+    elif msg.startswith("$:"):
         coin_id = msg[2:].strip()
         reply_text = crypto_gpt(coin_id)
     else:
@@ -182,7 +189,7 @@ def handle_message(event):
 def handle_postback(event):
     print(event.postback.data)
 
-#觀迎剛剛加入的人
+# 歡迎剛剛加入的人
 @handler.add(MemberJoinedEvent)
 def welcome(event):
     uid = event.joined.members[0].user_id
@@ -211,4 +218,3 @@ if __name__ == "__main__":
         app.run(host='0.0.0.0', port=port)
     except Exception as e:
         print(f"伺服器啟動失敗: {e}")
-
