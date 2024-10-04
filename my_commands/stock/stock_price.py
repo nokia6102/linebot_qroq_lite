@@ -1,10 +1,11 @@
 import yfinance as yf
 import datetime as dt
+import re
 
 # 從 yfinance 取得一周股價資料
 def stock_price(stock_id, days=10):
-    # 判斷股票代碼是否為台股
-    if stock_id.isdigit() and (4 <= len(stock_id) <= 5):
+    # 判斷是否為台股（4-5位數字，可帶字母）
+    if re.match(r'^\d{4,5}[A-Za-z]?$', stock_id):  # 台股代碼格式
         stock_id_tw = stock_id + ".TW"
         stock_id_two = stock_id + ".TWO"
 
@@ -42,14 +43,14 @@ def stock_price(stock_id, days=10):
     df.columns = ['開盤價', '最高價', '最低價', '收盤價', '調整後收盤價', '成交量']
 
     data = {
-        '日期': df.index.strftime('%Y-%m-%d').tolist(),
-        '收盤價': df['收盤價'].tolist(),
-        '每日報酬': df['收盤價'].pct_change().tolist(),
-        '漲跌價差': df['調整後收盤價'].diff().tolist()
+        '日期': df.index.strftime('%Y-%m-%d').tolist(),  # 格式化日期
+        '收盤價': df['收盤價'].tolist(),  # 提取收盤價
+        '每日報酬': df['收盤價'].pct_change().tolist(),  # 計算每日報酬率
+        '漲跌價差': df['調整後收盤價'].diff().tolist()  # 計算漲跌價差
     }
 
     return data
 
 # 測試函數
-# print(stock_price("2330", 10))
-# print(stock_price("AAPL", 10))
+# print(stock_price("2330", 10))  # 測試台股代碼
+print(stock_price("AAPL", 10))  # 測試美股代碼

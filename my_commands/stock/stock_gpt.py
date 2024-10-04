@@ -60,13 +60,14 @@ def get_reply(messages):
 def generate_content_msg(stock_id):
     # 檢查是否為美盤
     if stock_id == "美盤" or stock_id == "美股":
-        stock_id = "^GSPC"  # 標普500指數的代碼
-        stock_name = "美國大盤"
+        stock_id = "^GSPC"  # 標普500指數的代碼 #**
+        stock_name = "美國大盤"  #**
     else:
-        # 使用 pandas 根據股號查找對應的股名
-        stock_name = get_stock_name(int(stock_id))
-        if not stock_name:
-            stock_name = stock_id
+        # 使用正則表達式判斷台股（4-5位數字，可帶字母）和美股（1-5位字母） #**
+        if re.match(r'^\d{4,5}[A-Za-z]?$', stock_id):  # 台股代碼格式 #**
+            stock_name = get_stock_name(stock_id)  # 查找台股代碼對應的股名 #**
+        else:
+            stock_name = stock_id  # 將美股代碼或無法匹配的代碼當作股名 #**
 
     # 取得價格資訊
     price_data = stock_price(stock_id)
