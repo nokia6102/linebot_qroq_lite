@@ -8,9 +8,9 @@ from linebot.models import PostbackEvent, TextSendMessage, MessageEvent, TextMes
 from linebot.models import *
 from groq import Groq, GroqError
 import requests
-from my_commands.stock_price import stock_price
-from my_commands.stock_news import stock_news
-from my_commands.stock_value import stock_fundamental
+from my_commands.stock.stock_price import stock_price
+from my_commands.stock.stock_news import stock_news
+from my_commands.stock.stock_value import stock_fundamental
 
 # 設定 API 金鑰
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
