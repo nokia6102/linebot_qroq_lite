@@ -98,8 +98,14 @@ def stock_gpt(stock_id):
 
     msg = [{
         "role": "system",
-        "content": "你現在是一位專業的證券分析師, 你會統整近期的股價\
-      、基本面、新聞資訊等方面並進行分析出買入區間: ??區間,預計停利: ??%，可?線?碼獲利,資金水位: ?張左右，做多還是多空?, 然後生成一份專業的趨勢分析報告。如果有要回連結格式範例： https://tw.stock.yahoo.com/quote/{{stock_id}}}}, reply in 繁中, Markdown格式"
+        "content": f"你現在是一位專業的證券分析師。請基於近期的股價走勢、基本面分析、新聞資訊等進行綜合分析。\
+                    請提供以下內容：\
+                    1. 推薦的買入區間 (例: 100-110元)\
+                    2. 預計停利點：百分比 (例: 10%)\
+                    3. 建議買入張數 (例: 3張)\
+                    4. 市場趨勢：請分析目前是適合做多還是空頭操作\
+                    最後，請提供一個正確的股票連結：[股票資訊連結](https://tw.stock.yahoo.com/quote/{stock_id})。\
+                    回應請使用繁體中文並格式化為 Markdown。"
     }, {
         "role": "user",
         "content": content_msg
@@ -108,6 +114,7 @@ def stock_gpt(stock_id):
     reply_data = get_reply(msg)
 
     return reply_data
+
 
 # stock_value.py 內的 stock_fundamental 函數增加錯誤處理
 def stock_fundamental(stock_id):
