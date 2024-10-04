@@ -138,6 +138,10 @@ def handle_message(event):
     # 判斷是否為彩種相關查詢
     if any(keyword in msg for keyword in lottery_keywords):
         reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
+    elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
+        reply_text = stock_gpt("大盤")
+    elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"):
+        reply_text = stock_gpt("美盤")   
     elif stock_code:
         stock_id = stock_code.group()
         reply_text = stock_gpt(stock_id)
@@ -164,6 +168,7 @@ def handle_message(event):
         reply_text = crypto_gpt(coin_id)
     else:
         # 傳送最新對話歷史給 Groq
+        print ("* else :",msg)
         messages = conversation_history[user_id][-MAX_HISTORY_LEN:]
         try:
             reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
