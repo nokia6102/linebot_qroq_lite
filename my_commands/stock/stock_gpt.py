@@ -11,7 +11,6 @@ import requests
 from my_commands.stock.stock_price import stock_price
 from my_commands.stock.stock_news import stock_news
 from my_commands.stock.stock_value import stock_fundamental
-
 from my_commands.stock.stock_rate import stock_dividend
 
 # 設定 API 金鑰
@@ -138,7 +137,8 @@ def stock_gpt(stock_id):
                     5. 預計停利點：百分比 (例: 10%)\
                     6. 建議買入張數 (例: 3張)\
                     7. 市場趨勢：請分析目前是適合做多還是空頭操作\
-                    8. 綜合分析\
+                    8. 配息分析\
+                    9. 綜合分析\
                     然後生成一份專業的趨勢分析報告 \
                     最後，請提供一個正確的股票連結：[股票資訊連結]({stock_link})。\
                     回應請使用繁體中文並格式化為 Markdown。"
