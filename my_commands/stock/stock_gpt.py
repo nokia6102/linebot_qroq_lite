@@ -56,7 +56,7 @@ def get_reply(messages):
     try:
         response = groq_client.chat.completions.create(
             # model="llama3-70b-8192",
-            model="lava-v1.5-7b-4096-preview",
+            model="llava-v1.5-7b-4096-preview",
             messages=messages,
             max_tokens=2000,
             temperature=1.2
