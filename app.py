@@ -166,6 +166,7 @@ def handle_message(event):
     if len(conversation_history[user_id]) > MAX_HISTORY_LEN * 2:
         conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY_LEN * 2:]
 
+    #單人才會顯示 (...)
     chat_id = get_chat_id(event)
     start_loading_animation(chat_id=chat_id, loading_seconds=5)
 
@@ -228,6 +229,7 @@ def handle_message(event):
         # 這裡可以根據需要增加錯誤處理
 
     # 將 GPT 的回應加入對話歷史
+    conversation_history[user_id].append({"role": "user", "content": msg})          #加這個使歷史對話更完整
     conversation_history[user_id].append({"role": "assistant", "content": reply_text})
 
 

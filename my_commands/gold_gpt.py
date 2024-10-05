@@ -29,28 +29,28 @@ def get_reply(messages):
     return reply
 
 def fetch_and_process_data():
-    # 获取和处理数据
+    # 取得和處理數據
     df_list = pd.read_html("https://rate.bot.com.tw/gold/chart/year/TWD")
     df = df_list[0]
 
-    # 数据处理
-    df = df[["日期", "本行賣出價格"]].copy()  # 复制以避免 SettingWithCopyWarning
+    # 數據處理
+    df = df[["日期", "本行賣出價格"]].copy()  # 複製以避免 SettingWithCopyWarning
     df.index = pd.to_datetime(df["日期"], format="%Y/%m/%d")
     df.sort_index(inplace=True)
 
     return df
 
 def generate_content_msg():
-    # 获取和处理数据
+    # 取得和處理數據
     gold_prices_df = fetch_and_process_data()
 
-    # 从数据中获取需要的最高价和最低价信息
+    # 從數據中取得需要的最高價和最低價資訊
     max_price = gold_prices_df['本行賣出價格'].max()
     min_price = gold_prices_df['本行賣出價格'].min()
-    last_date = gold_prices_df.index[-1].strftime("%Y-%m-%d")  # 假设最后一行是最新日期数据
+    last_date = gold_prices_df.index[-1].strftime("%Y-%m-%d")  # 假設最後一行是最新日期數據
 
-    # 构造专业分析报告的内容
-    content_msg = f'你現在是一位專業的金價分析師, 使用以下数据来撰写分析报告:\n'
+    # 構造專業分析報告的內容
+    content_msg = f'你現在是一位專業的金價分析師, 使用以下數據來撰寫分析報告:\n'
     content_msg += f'{gold_prices_df}\n'
     content_msg += f'最新日期: {last_date}, 最高金價: {max_price} {{日期}}, 最低金價: {min_price}{{日期}}。\n'
     content_msg += '請給出完整的趨勢分析報告，顯示每日金價{日期}{金價}(台幣)，'
@@ -60,11 +60,11 @@ def generate_content_msg():
 
 def gold_gpt():
     content_msg = generate_content_msg()
-    print(content_msg)  # 调试输出
+    print(content_msg)  # 調試輸出
 
     msg = [{
         "role": "system",
-        "content": "你現在是一位專業的金價分析師, 使用以下数据来撰写分析报告。"
+        "content": "你現在是一位專業的金價分析師, 使用以下數據來撰寫分析報告。"
     }, {
         "role": "user",
         "content": content_msg
