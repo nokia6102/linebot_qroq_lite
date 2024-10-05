@@ -58,10 +58,13 @@ def get_reply(messages):
 
 # 建立訊息指令(Prompt)
 def generate_content_msg(stock_id):
-    # 檢查是否為美盤
+    # 檢查是否為美盤或台灣大盤
     if stock_id == "美盤" or stock_id == "美股":
         stock_id = "^GSPC"  # 標普500指數的代碼
         stock_name = "美國大盤" 
+    elif stock_id == "大盤":
+        stock_id = "^TWII"  # 台灣加權股價指數的代碼
+        stock_name = "台灣大盤"
     else:
         # 使用正則表達式判斷台股（4-5位數字，可帶字母）和美股（1-5位字母）
         if re.match(r'^\d{4,5}[A-Za-z]?$', stock_id):  # 台股代碼格式 
@@ -80,7 +83,7 @@ def generate_content_msg(stock_id):
       你會依據以下資料來進行分析並給出一份完整的分析報告:\n'
     content_msg += f'近期價格資訊:\n {price_data}\n'
 
-    if stock_id not in ["大盤", "^GSPC"]:
+    if stock_id not in ["^TWII", "^GSPC"]:
         stock_value_data = stock_fundamental(stock_id)
         if stock_value_data:
             content_msg += f'每季營收資訊：\n {stock_value_data}\n'
@@ -92,30 +95,42 @@ def generate_content_msg(stock_id):
 
     return content_msg
 
+
 # StockGPT
 def stock_gpt(stock_id):
+    # 生成內容訊息
     content_msg = generate_content_msg(stock_id)
 
+    # 根據股票代號判斷是否為台灣大盤或美股，並生成相應的連結
+    if stock_id == "大盤":
+        stock_link = "https://tw.finance.yahoo.com/quote/%5ETWII/"
+    elif stock_id == "美盤" or stock_id == "美股":
+        stock_link = "https://tw.finance.yahoo.com/quote/%5EGSPC/"
+    else:
+        stock_link = f"https://tw.stock.yahoo.com/quote/{stock_id}"
+
+    # 設置訊息指令
     msg = [{
-    "role": "system",
-    "content": f"你現在是一位專業的證券分析師。請基於近期的股價走勢、基本面分析、新聞資訊等進行綜合分析。\
-                請提供以下內容：\
-                1. 股價走勢\
-                2. 基本面分析\
-                3. 新聞資訊面\
-                4. 推薦的買入區間 (例: 100-110元)\
-                5. 預計停利點：百分比 (例: 10%)\
-                6. 建議買入張數 (例: 3張)\
-                7. 市場趨勢：請分析目前是適合做多還是空頭操作\
-                8. 綜合分析\
-                然後生成一份專業的趨勢分析報告 \
-                最後，請提供一個正確的股票連結：[股票資訊連結](https://tw.stock.yahoo.com/quote/{stock_id})。\
-                回應請使用繁體中文並格式化為 Markdown。"
+        "role": "system",
+        "content": f"你現在是一位專業的證券分析師。請基於近期的股價走勢、基本面分析、新聞資訊等進行綜合分析。\
+                    請提供以下內容：\
+                    1. 股價走勢\
+                    2. 基本面分析\
+                    3. 新聞資訊面\
+                    4. 推薦的買入區間 (例: 100-110元)\
+                    5. 預計停利點：百分比 (例: 10%)\
+                    6. 建議買入張數 (例: 3張)\
+                    7. 市場趨勢：請分析目前是適合做多還是空頭操作\
+                    8. 綜合分析\
+                    然後生成一份專業的趨勢分析報告 \
+                    最後，請提供一個正確的股票連結：[股票資訊連結]({stock_link})。\
+                    回應請使用繁體中文並格式化為 Markdown。"
     }, {
         "role": "user",
         "content": content_msg
     }]
 
+    # 調用 GPT 模型進行回應生成
     reply_data = get_reply(msg)
 
     return reply_data

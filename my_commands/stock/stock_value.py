@@ -5,9 +5,9 @@ import re
 # 基本面資料
 def stock_fundamental(stock_id="大盤"):
     if stock_id == "大盤":
-        return None
+        return "大盤沒有具體基本面資料"
 
-    # 判斷是否為台股（4-5位數字，可帶字母）
+    # 判斷是否為台股（4-6位數字，可帶字母）
     if re.match(r'^\d{4,6}[A-Za-z]?$', stock_id):  # 台股代碼格式
         stock_id_tw = stock_id + ".TW"
         stock_id_two = stock_id + ".TWO"
