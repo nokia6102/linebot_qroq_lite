@@ -46,7 +46,3 @@ def stock_dividend(stock_id="大盤"):
     }
 
     return data
-
-# 測試函數
-print("* 00929 ",stock_dividend("00929"))  # 測試台股代碼
-print("* AAPL ",stock_dividend("AAPL"))   # 測試美股代碼
