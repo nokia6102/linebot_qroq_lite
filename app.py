@@ -59,7 +59,7 @@ def get_reply(messages):
         )
         reply = response.choices[0].message.content
         return reply
-    except Groq.GroqError as groq_err:
+    except Exception as groq_err:
         reply = f"GROQ API 發生錯誤: {groq_err.message}"
         return reply
 
@@ -92,7 +92,6 @@ def start_loading_animation(chat_id, loading_seconds=5):
 
     try:
         response = requests.post(url, headers=headers, json=data)
-        # 檢查是否成功
         if response.status_code == 200:
             return response.status_code, response.json()  # 回傳JSON格式
         else:
@@ -146,6 +145,8 @@ def get_chat_id(event):
         return event.source.group_id  # 群組聊天
     elif event.source.type == 'room':
         return event.source.room_id  # 聊天室
+    else:
+        return None
 
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)

@@ -54,7 +54,7 @@ def get_reply(messages):
                 temperature=1.2
             )
             reply = response.choices[0].message.content
-        except Groq.GroqError as groq_err:
+        except Exception as groq_err:
             reply = f"OpenAI API 發生錯誤: {openai_err.error.message}, GROQ API 發生錯誤: {groq_err.message}"
     return reply
 
