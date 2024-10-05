@@ -149,6 +149,7 @@ def get_chat_id(event):
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global base_role  # 將 base_role 指定為全域變數
     global conversation_history
     user_id = event.source.user_id
     msg = event.message.text
