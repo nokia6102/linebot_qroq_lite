@@ -43,7 +43,7 @@ def girlfriend_gpt(user_name):
         },
         {
             "role": "user",
-            "content": "繁體中文"
+            "content": "繁體中文!不要中英夾雜晶晶體"
         }
     ]
     reply_data = get_reply(messages)
