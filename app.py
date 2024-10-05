@@ -75,11 +75,11 @@ def check_line_webhook():
         return None
 
 
-def start_loading_animation(chat_id, line_token, loading_seconds=5):
+def start_loading_animation(chat_id, loading_seconds=5):
     url = 'https://api.line.me/v2/bot/chat/loading/start'
     headers = {
         'Content-Type': 'application/json',
-         'Authorization": f"Bearer {line_bot_api}'
+        "Authorization": f"Bearer {os.getenv('CHANNEL_ACCESS_TOKEN')}",
     }
     data = {
         "chatId": chat_id,
@@ -166,10 +166,8 @@ def handle_message(event):
     if len(conversation_history[user_id]) > MAX_HISTORY_LEN * 2:
         conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY_LEN * 2:]
 
-
     chat_id = get_chat_id(event)
     start_loading_animation(chat_id=chat_id, loading_seconds=5)
-
 
     # 定義彩種關鍵字列表
     lottery_keywords = ["威力彩", "大樂透", "539", "雙贏彩", "3星彩", "三星彩", "4星彩", "四星彩", "38樂合彩", "39樂合彩", "49樂合彩", "運彩"]
