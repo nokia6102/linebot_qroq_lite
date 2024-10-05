@@ -77,6 +77,8 @@ def generate_content_msg(stock_id):
         # 使用正則表達式判斷台股（4-5位數字，可帶字母）和美股（1-5位字母）
         if re.match(r'^\d{4,5}[A-Za-z]?$', stock_id):  # 台股代碼格式 
             stock_name = get_stock_name(stock_id)  # 查找台股代碼對應的股名
+            if stock_name is None:
+                stock_name = stock_id  # 如果股名未找到，使用代碼
         else:
             stock_name = stock_id  # 將美股代碼或無法匹配的代碼當作股名
 
@@ -86,9 +88,9 @@ def generate_content_msg(stock_id):
     news_data = remove_full_width_spaces(stock_news(stock_name))
     news_data = truncate_text(remove_full_width_spaces(news_data), 1024)
 
-    # 組合訊息
-    content_msg = '你現在是一位專業的證券分析師, \
-      你會依據以下資料來進行分析並給出一份完整的分析報告:\n'
+    # 組合訊息，加入股名和股號
+    content_msg = f'你現在是一位專業的證券分析師, 你會依據以下資料來進行分析並給出一份完整的分析報告:\n'
+    content_msg += f'**股票代碼:** {stock_id}, **股票名稱:** {stock_name}\n'
     content_msg += f'近期價格資訊:\n {price_data}\n'
 
     if stock_id not in ["^TWII", "^GSPC"]:
