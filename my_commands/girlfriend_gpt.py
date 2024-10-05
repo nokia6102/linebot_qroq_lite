@@ -12,8 +12,8 @@ def get_reply(messages):
         response = groq_client.chat.completions.create(
             model="llama3-8b-8192",
             messages=messages,
-            max_tokens=1024,
-            temperature=1.2,  # 溫度決定生成文本的創造性
+            max_tokens=2048,
+            temperature=1.5,  # 溫度決定生成文本的創造性
             top_p=1
         )
         reply = response.choices[0].message.content
