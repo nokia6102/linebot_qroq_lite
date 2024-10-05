@@ -12,6 +12,8 @@ from my_commands.stock.stock_price import stock_price
 from my_commands.stock.stock_news import stock_news
 from my_commands.stock.stock_value import stock_fundamental
 
+from my_commands.stock.stock_rate import stock_dividend
+
 # 設定 API 金鑰
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -95,10 +97,16 @@ def generate_content_msg(stock_id):
 
     if stock_id not in ["^TWII", "^GSPC"]:
         stock_value_data = stock_fundamental(stock_id)
+        stock_vividend_data = stock_dividend(stock_id)      #配息資料
         if stock_value_data:
             content_msg += f'每季營收資訊：\n {stock_value_data}\n'
         else:
             content_msg += '每季營收資訊無法取得。\n'
+
+        if stock_vividend_data:
+            content_msg += f'配息資料：\n {stock_vividend_data}\n'
+        else:
+            content_msg += '配息資料資訊無法取得。\n'
 
     content_msg += f'近期新聞資訊: \n {news_data}\n'
     content_msg += f'請給我{stock_name}近期的趨勢報告。請以詳細、嚴謹及專業的角度撰寫此報告，並提及重要的數字，請使用台灣地區的繁體中文回答。'
