@@ -16,6 +16,8 @@ from my_commands.partjob_gpt import partjob_gpt, get_reply
 from my_commands.crypto_coin_gpt import crypto_gpt
 from linebot.exceptions import LineBotApiError, InvalidSignatureError
 from my_commands.stock.stock_gpt import stock_gpt, get_reply
+from my_commands.girlfriend_gpt import girlfriend_gpt, get_reply
+
 
 app = Flask(__name__)
 
@@ -208,6 +210,8 @@ def handle_message(event):
         reply_text = crypto_gpt("bitcoin")
     elif msg.startswith("狗狗幣"):
         reply_text = crypto_gpt("dogecoin")
+    elif msg.startswith("老婆"):
+        reply_text = girlfriend_gpt("主人殿下")
     else:
         # 傳送最新對話歷史給 Groq
         print ("* else :",msg)
