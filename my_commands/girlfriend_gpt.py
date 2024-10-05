@@ -6,7 +6,7 @@ groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # 構建對話回應
 def get_reply(messages):
-    print ("* girlfriend: get_relpy")"
+    print ("* girlfriend: get_relpy")
     try:
         # 呼叫 Groq 的 Chat Completion 來生成對話
         response = groq_client.chat.completions.create(
