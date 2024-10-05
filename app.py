@@ -18,8 +18,9 @@ from linebot.exceptions import LineBotApiError, InvalidSignatureError
 from my_commands.stock.stock_gpt import stock_gpt, get_reply
 from my_commands.girlfriend_gpt import girlfriend_gpt, get_reply
 
-
 app = Flask(__name__)
+
+base_role = "base"
 
 # SET BASE URL
 base_url = os.getenv("BASE_URL")
@@ -210,8 +211,12 @@ def handle_message(event):
         reply_text = crypto_gpt("bitcoin")
     elif msg.startswith("狗狗幣"):
         reply_text = crypto_gpt("dogecoin")
-    elif msg.startswith("老婆"):
+    elif msg.startswith("老婆") or base_role == "gf":
+        base_role = "gf"
         reply_text = girlfriend_gpt("主人殿下")
+    elif msg.startswith("離婚") or msg.startswith("exit"):
+        base_role = "base"
+        reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
     else:
         # 傳送最新對話歷史給 Groq
         print ("* else :",msg)
