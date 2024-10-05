@@ -74,6 +74,30 @@ def check_line_webhook():
         print(f"檢查 Webhook URL 失敗，狀態碼: {response.status_code}, 原因: {response.text}")
         return None
 
+
+def start_loading_animation(chat_id, line_token, loading_seconds=5):
+    url = 'https://api.line.me/v2/bot/chat/loading/start'
+    headers = {
+        'Content-Type': 'application/json',
+         'Authorization": f"Bearer {line_bot_api}'
+    }
+    data = {
+        "chatId": chat_id,
+        "loadingSeconds": loading_seconds
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        # 檢查是否成功
+        if response.status_code == 200:
+            return response.status_code, response.json()  # 回傳JSON格式
+        else:
+            print(f"Error: {response.status_code}, {response.text}")
+            return response.status_code, response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Exception during API request: {e}")
+        return None, str(e)
+
 # 更新 LINE Webhook URL 的函數
 def update_line_webhook():
     new_webhook_url = base_url + "/callback"
@@ -110,6 +134,15 @@ def callback():
         abort(400)
     return 'OK'
 
+
+def get_chat_id(event):
+    if event.source.type == 'user':
+        return event.source.user_id  # 單人聊天
+    elif event.source.type == 'group':
+        return event.source.group_id  # 群組聊天
+    elif event.source.type == 'room':
+        return event.source.room_id  # 聊天室
+
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -132,6 +165,11 @@ def handle_message(event):
     # 限制對話歷史長度
     if len(conversation_history[user_id]) > MAX_HISTORY_LEN * 2:
         conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY_LEN * 2:]
+
+
+    chat_id = get_chat_id(event)
+    start_loading_animation(chat_id=chat_id, loading_seconds=5)
+
 
     # 定義彩種關鍵字列表
     lottery_keywords = ["威力彩", "大樂透", "539", "雙贏彩", "3星彩", "三星彩", "4星彩", "四星彩", "38樂合彩", "39樂合彩", "49樂合彩", "運彩"]
