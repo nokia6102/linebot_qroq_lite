@@ -20,7 +20,8 @@ from my_commands.girlfriend_gpt import girlfriend_gpt, get_reply
 
 app = Flask(__name__)
 
-base_role = "base"
+# 管理每個聊天室的角色模式（獨立狀態）
+chat_roles = {}
 
 # SET BASE URL
 base_url = os.getenv("BASE_URL")
@@ -137,7 +138,7 @@ def callback():
         abort(400)
     return 'OK'
 
-
+# 根據 event 取得聊天室 ID
 def get_chat_id(event):
     if event.source.type == 'user':
         return event.source.user_id  # 單人聊天
@@ -149,83 +150,88 @@ def get_chat_id(event):
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    global base_role  # 將 base_role 指定為全域變數
     global conversation_history
-    user_id = event.source.user_id
-    msg = event.message.text
+    chat_id = get_chat_id(event)  # 獲取聊天室 ID
+    user_message = event.message.text
 
     # 初始化使用者的對話歷史
-    if user_id not in conversation_history:
-        conversation_history[user_id] = []
+    if chat_id not in conversation_history:
+        conversation_history[chat_id] = []
+
+    # 初始化該聊天室的角色模式為 "base"（預設模式）
+    if chat_id not in chat_roles:
+        chat_roles[chat_id] = 'base'
 
     # 將訊息加入對話歷史
-    conversation_history[user_id].append({"role": "user", "content": msg + ", 請以繁體中文回答我問題"})
+    conversation_history[chat_id].append({"role": "user", "content": user_message + ", 請以繁體中文回答我問題"})
 
     # 台股代碼邏輯：4-5個數字，且可選擇性有一個英文字母
-    stock_code = re.search(r'\b\d{4,5}[A-Za-z]?\b', msg)
+    stock_code = re.search(r'\b\d{4,5}[A-Za-z]?\b', user_message)
     # 美股代碼邏輯：1-5個字母
-    stock_symbol = re.search(r'\b[A-Za-z]{1,5}\b', msg)
+    stock_symbol = re.search(r'\b[A-Za-z]{1,5}\b', user_message)
 
     # 限制對話歷史長度
-    if len(conversation_history[user_id]) > MAX_HISTORY_LEN * 2:
-        conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY_LEN * 2:]
+    if len(conversation_history[chat_id]) > MAX_HISTORY_LEN * 2:
+        conversation_history[chat_id] = conversation_history[chat_id][-MAX_HISTORY_LEN * 2:]
 
     #單人才會顯示 (...)
-    chat_id = get_chat_id(event)
     start_loading_animation(chat_id=chat_id, loading_seconds=5)
 
     # 定義彩種關鍵字列表
     lottery_keywords = ["威力彩", "大樂透", "539", "雙贏彩", "3星彩", "三星彩", "4星彩", "四星彩", "38樂合彩", "39樂合彩", "49樂合彩", "運彩"]
 
     # 判斷是否為彩種相關查詢
-    if any(keyword in msg for keyword in lottery_keywords):
-        reply_text = lottery_gpt(msg)  # 呼叫對應的彩種處理函數
-    elif msg.lower().startswith("大盤") or msg.lower().startswith("台股"):
+    if any(keyword in user_message for keyword in lottery_keywords):
+        reply_text = lottery_gpt(user_message)  # 呼叫對應的彩種處理函數
+    elif user_message.lower().startswith("大盤") or user_message.lower().startswith("台股"):
         reply_text = stock_gpt("大盤")
-    elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"):
+    elif user_message.lower().startswith("美盤") or user_message.lower().startswith("美股"):
         reply_text = stock_gpt("美盤")   
-    elif any(msg.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
+    elif any(user_message.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
         reply_text = gold_gpt()
-    elif any(msg.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
+    elif any(user_message.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
         reply_text = platinum_gpt()
-    elif msg.lower().startswith(tuple(["日幣", "日元", "jpy", "換日幣"])):
+    elif user_message.lower().startswith(tuple(["日幣", "日元", "jpy", "換日幣"])):
         reply_text = money_gpt("JPY")
-    elif any(msg.lower().startswith(currency.lower()) for currency in ["美金", "usd", "美元", "換美金"]):
+    elif any(user_message.lower().startswith(currency.lower()) for currency in ["美金", "usd", "美元", "換美金"]):
         reply_text = money_gpt("USD")
-    elif msg.startswith("104:"):
-        reply_text = one04_gpt(msg[4:])
-    elif msg.startswith("pt:"):
-        reply_text = partjob_gpt(msg[3:])
-    elif msg.startswith("cb:"):
-        coin_id = msg[3:].strip()
+    elif user_message.startswith("104:"):
+        reply_text = one04_gpt(user_message[4:])
+    elif user_message.startswith("pt:"):
+        reply_text = partjob_gpt(user_message[3:])
+    elif user_message.startswith("cb:"):
+        coin_id = user_message[3:].strip()
         reply_text = crypto_gpt(coin_id)
-    elif msg.startswith("$:"):
-        coin_id = msg[2:].strip()
+    elif user_message.startswith("$:"):
+        coin_id = user_message[2:].strip()
         reply_text = crypto_gpt(coin_id)
-    elif stock_code:                                #後面判別
+    elif stock_code:
         stock_id = stock_code.group()
         reply_text = stock_gpt(stock_id)
-    elif stock_symbol:                              #後面判別
+    elif stock_symbol:
         stock_id = stock_symbol.group()
         reply_text = stock_gpt(stock_id)
-    elif msg.startswith("比特幣"):
+    elif user_message.startswith("比特幣"):
         reply_text = crypto_gpt("bitcoin")
-    elif msg.startswith("狗狗幣"):
+    elif user_message.startswith("狗狗幣"):
         reply_text = crypto_gpt("dogecoin")
-    elif msg.startswith("老婆") or base_role == "gf":
-        base_role = "gf"
+    elif user_message.startswith("老婆"):
+        chat_roles[chat_id] = 'gf'  # 該聊天室進入 "老婆模式"
         reply_text = girlfriend_gpt("主人")
-    elif msg.startswith("離婚") or msg.startswith("exit"):
-        base_role = "base"
-        reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
+    elif user_message.startswith("離婚") or user_message.startswith("exit"):
+        chat_roles[chat_id] = 'base'  # 回到預設模式
+        reply_text = get_reply(conversation_history[chat_id])  # 呼叫 Groq API 取得回應
     else:
-        # 傳送最新對話歷史給 Groq
-        print ("* else :",msg)
-        messages = conversation_history[user_id][-MAX_HISTORY_LEN:]
-        try:
-            reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
-        except Exception as e:
-            reply_text = f"GROQ API 發生錯誤: {str(e)}"
+        # 根據該聊天室的角色模式進行回應
+        if chat_roles[chat_id] == 'gf':
+            reply_text = girlfriend_gpt("主人")
+        else:
+            # 傳送最新對話歷史給 Groq
+            messages = conversation_history[chat_id][-MAX_HISTORY_LEN:]
+            try:
+                reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
+            except Exception as e:
+                reply_text = f"GROQ API 發生錯誤: {str(e)}"
 
     # 如果 `reply_text` 為空，設定一個預設回應
     if not reply_text:
@@ -236,12 +242,10 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(reply_text))
     except LineBotApiError as e:
         print(f"LINE 回覆失敗: {e}")
-        # 這裡可以根據需要增加錯誤處理
 
     # 將 GPT 的回應加入對話歷史
-    conversation_history[user_id].append({"role": "user", "content": msg})          #加這個使歷史對話更完整
-    conversation_history[user_id].append({"role": "assistant", "content": reply_text})
-
+    conversation_history[chat_id].append({"role": "user", "content": user_message})  # 加入歷史對話
+    conversation_history[chat_id].append({"role": "assistant", "content": reply_text})
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
