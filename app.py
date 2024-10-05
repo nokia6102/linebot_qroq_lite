@@ -218,7 +218,7 @@ def handle_message(event):
     elif user_message.startswith("老婆"):
         chat_roles[chat_id] = 'gf'  # 該聊天室進入 "老婆模式"
         reply_text = girlfriend_gpt("主人")
-    elif user_message.startswith("離婚") or user_message.startswith("exit"):
+    elif user_message.startswith("離婚"):
         chat_roles[chat_id] = 'base'  # 回到預設模式
         reply_text = get_reply(conversation_history[chat_id])  # 呼叫 Groq API 取得回應
     else:
