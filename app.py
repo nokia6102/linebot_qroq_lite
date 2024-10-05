@@ -167,6 +167,10 @@ def handle_message(event):
     elif msg.startswith("$:"):
         coin_id = msg[2:].strip()
         reply_text = crypto_gpt(coin_id)
+    elif msg.startswith("比特幣"):
+        reply_text = crypto_gpt("bitcoin")
+    elif msg.startswith("狗狗幣"):
+        reply_text = crypto_gpt("dogecoin")
     else:
         # 傳送最新對話歷史給 Groq
         print ("* else :",msg)
