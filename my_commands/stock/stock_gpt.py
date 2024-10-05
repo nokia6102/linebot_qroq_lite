@@ -52,6 +52,7 @@ def truncate_text(data, max_length=1024):
 
 # 建立 GPT 模型
 def get_reply(messages):
+    print ("* stock_gpt ")
     try:
         response = groq_client.chat.completions.create(
             model="llama3-70b-8192",

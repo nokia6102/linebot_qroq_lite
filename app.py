@@ -11,12 +11,12 @@ from my_commands.lottery_gpt import lottery_gpt
 from my_commands.gold_gpt import gold_gpt
 from my_commands.platinum_gpt import platinum_gpt
 from my_commands.money_gpt import money_gpt
-from my_commands.one04_gpt import one04_gpt, get_reply
-from my_commands.partjob_gpt import partjob_gpt, get_reply
+from my_commands.one04_gpt import one04_gpt
+from my_commands.partjob_gpt import partjob_gpt
 from my_commands.crypto_coin_gpt import crypto_gpt
 from linebot.exceptions import LineBotApiError, InvalidSignatureError
-from my_commands.stock.stock_gpt import stock_gpt, get_reply
-from my_commands.girlfriend_gpt import girlfriend_gpt, get_reply
+from my_commands.stock.stock_gpt import stock_gpt
+from my_commands.girlfriend_gpt import girlfriend_gpt
 
 app = Flask(__name__)
 
@@ -52,7 +52,7 @@ def get_reply(messages):
     print ("* app.py get_reply")
     try:
         response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama3-8b-8192",
             messages=messages,
             max_tokens=2000,
             temperature=1.2
