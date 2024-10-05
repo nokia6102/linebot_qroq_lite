@@ -214,7 +214,7 @@ def handle_message(event):
         reply_text = crypto_gpt("dogecoin")
     elif msg.startswith("老婆") or base_role == "gf":
         base_role = "gf"
-        reply_text = girlfriend_gpt("主人殿下")
+        reply_text = girlfriend_gpt("主人")
     elif msg.startswith("離婚") or msg.startswith("exit"):
         base_role = "base"
         reply_text = get_reply(messages)  # 呼叫 Groq API 取得回應
