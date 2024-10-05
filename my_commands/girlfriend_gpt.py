@@ -46,9 +46,6 @@ def girlfriend_gpt(user_name):
             "content": "繁體中文"
         }
     ]
-    return messages
-
-    # 呼叫 GPT 模型獲取回應
     reply_data = get_reply(messages)
     return reply_data
 
