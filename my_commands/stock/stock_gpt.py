@@ -15,11 +15,19 @@ from my_commands.stock.stock_value import stock_fundamental
 # 設定 API 金鑰
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# 讀取 CSV 檔案並將其轉換為 DataFrame
-stock_data_df = pd.read_csv('name_df.csv')
+# 初始化全局變數以存儲股票資料
+stock_data_df = None
+
+# 讀取 CSV 檔案並將其轉換為 DataFrame，只在首次調用時讀取
+def load_stock_data():
+    global stock_data_df
+    if stock_data_df is None:
+        stock_data_df = pd.read_csv('name_df.csv')
+    return stock_data_df
 
 # 根據股號查找對應的股名
 def get_stock_name(stock_id):
+    stock_data_df = load_stock_data()  # 加載股票資料
     result = stock_data_df[stock_data_df['股號'] == stock_id]
     if not result.empty:
         return result.iloc[0]['股名']
@@ -95,8 +103,7 @@ def generate_content_msg(stock_id):
 
     return content_msg
 
-
-# StockGPT
+# StockGPT 主程式
 def stock_gpt(stock_id):
     # 生成內容訊息
     content_msg = generate_content_msg(stock_id)
@@ -134,7 +141,6 @@ def stock_gpt(stock_id):
     reply_data = get_reply(msg)
 
     return reply_data
-
 
 # stock_value.py 內的 stock_fundamental 函數增加錯誤處理
 def stock_fundamental(stock_id):
