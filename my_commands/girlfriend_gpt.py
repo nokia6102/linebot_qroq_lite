@@ -18,8 +18,9 @@ def get_reply(messages):
         )
         reply = response.choices[0].message.content
         return reply
-    except Groq.GroqError as groq_err:
-        return f"GROQ API 發生錯誤: {groq_err.message}"
+    except Exception as e:                                      #刪除 GroqError，直接處理例外情況即可，或根據正確的 API 錯誤處理方法來替代
+        reply = f"GROQ API 發生錯誤: {str(e)}"
+        return reply
 
 # 女人人設
 def girlfriend_gpt(user_name):
