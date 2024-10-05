@@ -182,12 +182,6 @@ def handle_message(event):
         reply_text = stock_gpt("大盤")
     elif msg.lower().startswith("美盤") or msg.lower().startswith("美股"):
         reply_text = stock_gpt("美盤")   
-    elif stock_code:
-        stock_id = stock_code.group()
-        reply_text = stock_gpt(stock_id)
-    elif stock_symbol:
-        stock_id = stock_symbol.group()
-        reply_text = stock_gpt(stock_id)
     elif any(msg.lower().startswith(currency.lower()) for currency in ["金價", "金", "黃金", "gold"]):
         reply_text = gold_gpt()
     elif any(msg.lower().startswith(currency.lower()) for currency in ["鉑", "鉑金", "platinum", "白金"]):
@@ -206,6 +200,12 @@ def handle_message(event):
     elif msg.startswith("$:"):
         coin_id = msg[2:].strip()
         reply_text = crypto_gpt(coin_id)
+    elif stock_code:                                #後面判別
+        stock_id = stock_code.group()
+        reply_text = stock_gpt(stock_id)
+    elif stock_symbol:                              #後面判別
+        stock_id = stock_symbol.group()
+        reply_text = stock_gpt(stock_id)
     elif msg.startswith("比特幣"):
         reply_text = crypto_gpt("bitcoin")
     elif msg.startswith("狗狗幣"):
