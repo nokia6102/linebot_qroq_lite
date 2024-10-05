@@ -65,5 +65,3 @@ def girlfriend_gpt(user_name):
 #     # 呼叫女朋友角色生成的對話
 #     reply = girlfriend_gpt(user_name)
     
-#     # 輸出生成的對話回應
-#     print(reply)
