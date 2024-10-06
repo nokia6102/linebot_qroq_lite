@@ -176,8 +176,9 @@ def handle_message(event):
         conversation_history[chat_id] = conversation_history[chat_id][-MAX_HISTORY_LEN * 2:]
 
     #單人才會顯示 (...)
-    start_loading_animation(chat_id=chat_id, loading_seconds=5)
-
+    if event.source.type == 'user':
+        start_loading_animation(chat_id=chat_id, loading_seconds=5)
+        
     # 定義彩種關鍵字列表
     lottery_keywords = ["威力彩", "大樂透", "539", "雙贏彩", "3星彩", "三星彩", "4星彩", "四星彩", "38樂合彩", "39樂合彩", "49樂合彩", "運彩"]
 
